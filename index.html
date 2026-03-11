@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="./leaflet.js"></script>
+
+<style>
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: serif;
+  background-color: #000000;
+}
+
+/* Layout: Map 80%, Panel 20% */
+#container {
+  display: flex;
+  height: 100vh;
+}
+
+#map {
+  flex: 8; /* 80% */
+  background-color: black;
+}
+
+#exportBox {
+  flex: 2; /* 20% */
+  padding: 10px;
+  background: #fff;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+  overflow-y: auto;
+}
+
+/* Textarea inside panel */
+textarea {
+  width: 100%;
+  height: 200px;
+}
+
+/* marker styles */
+.townMarker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #d2a34a;
+  font-weight: bold;
+  text-shadow: 0 0 2px black, 0 0 4px black;
+  width: 60px;
+}
+
+.townMarker img {
+  height: auto;
+  display: block;
+}
+
+.townLabel {
+  font-size: 14px;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.navbar {
+    color: #fff;
+    background-color: #000000;
+    max-width: 400px;
+    text-align: center;
+}
+</style>
+</head>
+
+<body>
+<div id="container">
+  <div id="map"></div>
+<div class="navbar">
+
+<div id="trading">
+    <div id="goodsFormContainer"></div>
+</div>
+
+<div id="exportBox" style="display: none">
+    <button id="exportBtn">Export Markers</button>
+    <br><br>
+    <textarea id="output"></textarea>
+    <div id="goodsFormContainer"></div>
+</div>
+  
+</div>
+
+<script>
+
+//import towns from './townsData.js';
+
+const towns = [
+  {
+    "name": "Oneg",
+    "x": 462,
+    "y": 1634,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 37,
+      "Leather": 34,
+      "Cinnamon": 35,
+      "Coffee": 43,
+      "Mango": 17,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 23,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 13,
+      "Saffron": 56,
+      "Silk": 79
+    }
+  },
+  {
+    "name": "Nordberg",
+    "x": 296,
+    "y": 1455,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 31,
+      "Leather": 34,
+      "Cinnamon": 30,
+      "Coffee": 43,
+      "Mango": 15,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 20,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 11,
+      "Saffron": 48,
+      "Silk": 67
+    }
+  },
+  {
+    "name": "Gelbion",
+    "x": 647,
+    "y": 1393,
+    "image": "./images/town.png",
+    "goods": {
+      "Sugar": 0,
+      "Paprika": 0,
+      "Silk": 0,
+      "Mango": 0,
+      "Leather": 0,
+      "Nuts": 0,
+      "Oil": 0,
+      "Beer": 0,
+      "Cinnamon": 0,
+      "Rugs": 0,
+      "Tobacco": 0,
+      "Pepper": 0,
+      "Wine": 0,
+      "Grog": 0,
+      "Saffron": 0,
+      "Salt": 0,
+      "Dates": 0,
+      "Coffee": 0,
+      "Vanilla": 0,
+      "Pineapples": 0
+    }
+  },
+  {
+    "name": "Corsa-Nois",
+    "x": 897,
+    "y": 1671,
+    "image": "./images/pirate.png",
+    "goods": {
+      "Sugar": 0,
+      "Paprika": 0,
+      "Silk": 0,
+      "Mango": 0,
+      "Leather": 0,
+      "Nuts": 0,
+      "Oil": 0,
+      "Beer": 0,
+      "Cinnamon": 0,
+      "Rugs": 0,
+      "Tobacco": 0,
+      "Pepper": 0,
+      "Wine": 0,
+      "Grog": 0,
+      "Saffron": 0,
+      "Salt": 0,
+      "Dates": 0,
+      "Coffee": 0,
+      "Vanilla": 0,
+      "Pineapples": 0
+    }
+  },
+  {
+    "name": "Nisogora",
+    "x": 222,
+    "y": 1297,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 28,
+      "Leather": 34,
+      "Cinnamon": 27,
+      "Coffee": 16,
+      "Mango": 13,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 18,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 10,
+      "Saffron": 43,
+      "Silk": 60
+    }
+  },
+  {
+    "name": "Cursed city",
+    "x": 145,
+    "y": 1065,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 37,
+      "Wine": 11,
+      "Grog": 11,
+      "Rugs": 24,
+      "Leather": 34,
+      "Cinnamon": 23,
+      "Coffee": 42,
+      "Mango": 11,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 15,
+      "Pepper": 36,
+      "Beer": 6,
+      "Sugar": 51,
+      "Salt": 21,
+      "Tobacco": 54,
+      "Dates": 8,
+      "Saffron": 37,
+      "Silk": 52
+    }
+  },
+  {
+    "name": "Naabad Stronghold",
+    "x": 551,
+    "y": 1019,
+    "image": "./images/pirate.png",
+    "goods": {
+      "Sugar": 0,
+      "Paprika": 0,
+      "Silk": 0,
+      "Mango": 0,
+      "Leather": 0,
+      "Nuts": 0,
+      "Oil": 0,
+      "Beer": 0,
+      "Cinnamon": 0,
+      "Rugs": 0,
+      "Tobacco": 0,
+      "Pepper": 0,
+      "Wine": 0,
+      "Grog": 0,
+      "Saffron": 0,
+      "Salt": 0,
+      "Dates": 0,
+      "Coffee": 0,
+      "Vanilla": 0,
+      "Pineapples": 0
+    }
+  },
+  {
+    "name": "West Bastion",
+    "x": 273,
+    "y": 828,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 16,
+      "Vanilla": 32,
+      "Wine": 12,
+      "Grog": 12,
+      "Rugs": 24,
+      "Leather": 29,
+      "Cinnamon": 23,
+      "Coffee": 36,
+      "Mango": 11,
+      "Oil": 19,
+      "Nuts": 13,
+      "Paprika": 15,
+      "Pepper": 30,
+      "Beer": 7,
+      "Sugar": 43,
+      "Salt": 24,
+      "Tobacco": 46,
+      "Dates": 8,
+      "Saffron": 37,
+      "Silk": 52
+    }
+  },
+  {
+    "name": "Masadora",
+    "x": 662,
+    "y": 823,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 15,
+      "Vanilla": 29,
+      "Wine": 14,
+      "Grog": 14,
+      "Rugs": 24,
+      "Leather": 26,
+      "Cinnamon": 23,
+      "Coffee": 32,
+      "Mango": 11,
+      "Oil": 17,
+      "Nuts": 12,
+      "Paprika": 15,
+      "Pepper": 15,
+      "Beer": 8,
+      "Sugar": 39,
+      "Salt": 27,
+      "Tobacco": 41,
+      "Dates": 8,
+      "Saffron": 37,
+      "Silk": 52
+    }
+  },
+  {
+    "name": "Sharhat",
+    "x": 391,
+    "y": 506,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 14,
+      "Vanilla": 27,
+      "Wine": 15,
+      "Grog": 15,
+      "Rugs": 24,
+      "Leather": 24,
+      "Cinnamon": 23,
+      "Coffee": 30,
+      "Mango": 11,
+      "Oil": 16,
+      "Nuts": 11,
+      "Paprika": 15,
+      "Pepper": 25,
+      "Beer": 9,
+      "Sugar": 36,
+      "Salt": 30,
+      "Tobacco": 38,
+      "Dates": 8,
+      "Saffron": 37,
+      "Silk": 52
+    }
+  },
+  {
+    "name": "Devious",
+    "x": 714,
+    "y": 428,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 29,
+      "Leather": 20,
+      "Cinnamon": 28,
+      "Coffee": 25,
+      "Mango": 14,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 18,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 10,
+      "Saffron": 44,
+      "Silk": 62
+    }
+  },
+  {
+    "name": "El Tigre",
+    "x": 744,
+    "y": 205,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 32,
+      "Leather": 20,
+      "Cinnamon": 30,
+      "Coffee": 25,
+      "Mango": 15,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 20,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 11,
+      "Saffron": 48,
+      "Silk": 68
+    }
+  },
+  {
+    "name": "Al-Khalif",
+    "x": 135,
+    "y": 177,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 13,
+      "Vanilla": 31,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 24,
+      "Leather": 28,
+      "Cinnamon": 23,
+      "Coffee": 35,
+      "Mango": 11,
+      "Oil": 18,
+      "Nuts": 13,
+      "Paprika": 15,
+      "Pepper": 29,
+      "Beer": 9,
+      "Sugar": 42,
+      "Salt": 31,
+      "Tobacco": 44,
+      "Dates": 8,
+      "Saffron": 37,
+      "Silk": 52
+    }
+  },
+  {
+    "name": "San Cristobel",
+    "x": 1010,
+    "y": 227,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 36,
+      "Leather": 20,
+      "Cinnamon": 34,
+      "Coffee": 25,
+      "Mango": 17,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 22,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 12,
+      "Saffron": 55,
+      "Silk": 76
+    }
+  },
+  {
+    "name": "Pirate City",
+    "x": 1132,
+    "y": 142,
+    "image": "./images/pirate.png",
+    "goods": {
+      "Sugar": 0,
+      "Paprika": 0,
+      "Silk": 0,
+      "Mango": 0,
+      "Leather": 0,
+      "Nuts": 0,
+      "Oil": 0,
+      "Beer": 0,
+      "Cinnamon": 0,
+      "Rugs": 0,
+      "Tobacco": 0,
+      "Pepper": 0,
+      "Wine": 0,
+      "Grog": 0,
+      "Saffron": 0,
+      "Salt": 0,
+      "Dates": 0,
+      "Coffee": 0,
+      "Vanilla": 0,
+      "Pineapples": 0
+    }
+  },
+  {
+    "name": "San Martinas",
+    "x": 1455,
+    "y": 194,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 41,
+      "Leather": 20,
+      "Cinnamon": 39,
+      "Coffee": 25,
+      "Mango": 19,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 26,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "South Bastion",
+    "x": 1740,
+    "y": 301,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 41,
+      "Leather": 20,
+      "Cinnamon": 39,
+      "Coffee": 25,
+      "Mango": 19,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 26,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Bord Radel",
+    "x": 2051,
+    "y": 173,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 41,
+      "Leather": 20,
+      "Cinnamon": 39,
+      "Coffee": 25,
+      "Mango": 19,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 26,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Puerto Salada",
+    "x": 2342,
+    "y": 374,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 41,
+      "Leather": 20,
+      "Cinnamon": 39,
+      "Coffee": 25,
+      "Mango": 19,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 26,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Los Catuano",
+    "x": 2093,
+    "y": 425,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 41,
+      "Leather": 20,
+      "Cinnamon": 39,
+      "Coffee": 25,
+      "Mango": 19,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 26,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Santa Maria",
+    "x": 2290,
+    "y": 592,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 11,
+      "Vanilla": 22,
+      "Wine": 15,
+      "Grog": 15,
+      "Rugs": 41,
+      "Leather": 20,
+      "Cinnamon": 39,
+      "Coffee": 25,
+      "Mango": 19,
+      "Oil": 13,
+      "Nuts": 9,
+      "Paprika": 26,
+      "Pepper": 21,
+      "Beer": 9,
+      "Sugar": 30,
+      "Salt": 30,
+      "Tobacco": 32,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "St Jean",
+    "x": 1851,
+    "y": 612,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 14,
+      "Vanilla": 27,
+      "Wine": 15,
+      "Grog": 15,
+      "Rugs": 41,
+      "Leather": 24,
+      "Cinnamon": 39,
+      "Coffee": 30,
+      "Mango": 19,
+      "Oil": 16,
+      "Nuts": 11,
+      "Paprika": 26,
+      "Pepper": 25,
+      "Beer": 8,
+      "Sugar": 36,
+      "Salt": 29,
+      "Tobacco": 38,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Freebooter Bay",
+    "x": 2378,
+    "y": 814,
+    "image": "./images/pirate.png",
+    "goods": {
+      "Sugar": 0,
+      "Paprika": 0,
+      "Silk": 0,
+      "Mango": 0,
+      "Leather": 0,
+      "Nuts": 0,
+      "Oil": 0,
+      "Beer": 0,
+      "Cinnamon": 0,
+      "Rugs": 0,
+      "Tobacco": 0,
+      "Pepper": 0,
+      "Wine": 0,
+      "Grog": 0,
+      "Saffron": 0,
+      "Salt": 0,
+      "Dates": 0,
+      "Coffee": 0,
+      "Vanilla": 0,
+      "Pineapples": 0
+    }
+  },
+  {
+    "name": "Fiji",
+    "x": 1957,
+    "y": 927,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 15,
+      "Vanilla": 29,
+      "Wine": 12,
+      "Grog": 12,
+      "Rugs": 41,
+      "Leather": 27,
+      "Cinnamon": 39,
+      "Coffee": 33,
+      "Mango": 19,
+      "Oil": 17,
+      "Nuts": 12,
+      "Paprika": 26,
+      "Pepper": 28,
+      "Beer": 7,
+      "Sugar": 40,
+      "Salt": 24,
+      "Tobacco": 42,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Brandport",
+    "x": 2206,
+    "y": 1029,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 15,
+      "Vanilla": 29,
+      "Wine": 12,
+      "Grog": 12,
+      "Rugs": 41,
+      "Leather": 26,
+      "Cinnamon": 39,
+      "Coffee": 33,
+      "Mango": 19,
+      "Oil": 17,
+      "Nuts": 12,
+      "Paprika": 26,
+      "Pepper": 28,
+      "Beer": 7,
+      "Sugar": 39,
+      "Salt": 23,
+      "Tobacco": 42,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Freedom Bay",
+    "x": 2383,
+    "y": 1205,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 17,
+      "Vanilla": 33,
+      "Wine": 11,
+      "Grog": 11,
+      "Rugs": 41,
+      "Leather": 30,
+      "Cinnamon": 39,
+      "Coffee": 37,
+      "Mango": 19,
+      "Oil": 19,
+      "Nuts": 14,
+      "Paprika": 26,
+      "Pepper": 31,
+      "Beer": 6,
+      "Sugar": 44,
+      "Salt": 22,
+      "Tobacco": 47,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "North Bastion",
+    "x": 2079,
+    "y": 1385,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 37,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 41,
+      "Leather": 34,
+      "Cinnamon": 39,
+      "Coffee": 42,
+      "Mango": 19,
+      "Oil": 22,
+      "Nuts": 15,
+      "Paprika": 26,
+      "Pepper": 35,
+      "Beer": 5,
+      "Sugar": 50,
+      "Salt": 18,
+      "Tobacco": 54,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Northside",
+    "x": 2302,
+    "y": 1554,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 41,
+      "Leather": 34,
+      "Cinnamon": 39,
+      "Coffee": 43,
+      "Mango": 19,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 26,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Severoangelsk",
+    "x": 1965,
+    "y": 1600,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 41,
+      "Leather": 34,
+      "Cinnamon": 39,
+      "Coffee": 43,
+      "Mango": 19,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 26,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Aldansk",
+    "x": 1737,
+    "y": 1640,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 41,
+      "Leather": 34,
+      "Cinnamon": 39,
+      "Coffee": 43,
+      "Mango": 19,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 26,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Everston",
+    "x": 1177,
+    "y": 1533,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 39,
+      "Leather": 34,
+      "Cinnamon": 37,
+      "Coffee": 43,
+      "Mango": 18,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 25,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 13,
+      "Saffron": 60,
+      "Silk": 84
+    }
+  },
+  {
+    "name": "Aruba",
+    "x": 1461,
+    "y": 1383,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 41,
+      "Leather": 34,
+      "Cinnamon": 39,
+      "Coffee": 43,
+      "Mango": 19,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 26,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Surako",
+    "x": 747,
+    "y": 1189,
+    "image": "./images/freeport.png",
+    "goods": {
+      "Pineapples": 18,
+      "Vanilla": 36,
+      "Wine": 12,
+      "Grog": 12,
+      "Rugs": 28,
+      "Leather": 33,
+      "Cinnamon": 27,
+      "Coffee": 41,
+      "Mango": 13,
+      "Oil": 21,
+      "Nuts": 15,
+      "Paprika": 18,
+      "Pepper": 34,
+      "Beer": 7,
+      "Sugar": 49,
+      "Salt": 24,
+      "Tobacco": 52,
+      "Dates": 10,
+      "Saffron": 43,
+      "Silk": 60
+    }
+  },
+  {
+    "name": "Nevis",
+    "x": 1107,
+    "y": 1163,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 37,
+      "Wine": 12,
+      "Grog": 12,
+      "Rugs": 33,
+      "Leather": 34,
+      "Cinnamon": 32,
+      "Coffee": 42,
+      "Mango": 16,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 21,
+      "Pepper": 36,
+      "Beer": 7,
+      "Sugar": 51,
+      "Salt": 23,
+      "Tobacco": 54,
+      "Dates": 11,
+      "Saffron": 51,
+      "Silk": 71
+    }
+  },
+  {
+    "name": "Bridgetown",
+    "x": 984,
+    "y": 832,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 15,
+      "Vanilla": 29,
+      "Wine": 14,
+      "Grog": 14,
+      "Rugs": 28,
+      "Leather": 27,
+      "Cinnamon": 27,
+      "Coffee": 33,
+      "Mango": 13,
+      "Oil": 18,
+      "Nuts": 12,
+      "Paprika": 18,
+      "Pepper": 28,
+      "Beer": 8,
+      "Sugar": 40,
+      "Salt": 28,
+      "Tobacco": 43,
+      "Dates": 10,
+      "Saffron": 43,
+      "Silk": 61
+    }
+  },
+  {
+    "name": "Charleston",
+    "x": 1031,
+    "y": 658,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 14,
+      "Vanilla": 27,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 30,
+      "Leather": 25,
+      "Cinnamon": 29,
+      "Coffee": 31,
+      "Mango": 14,
+      "Oil": 16,
+      "Nuts": 11,
+      "Paprika": 19,
+      "Pepper": 26,
+      "Beer": 9,
+      "Sugar": 37,
+      "Salt": 31,
+      "Tobacco": 39,
+      "Dates": 10,
+      "Saffron": 46,
+      "Silk": 64
+    }
+  },
+  {
+    "name": "Laguana Blanco",
+    "x": 1310,
+    "y": 663,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 15,
+      "Vanilla": 30,
+      "Wine": 15,
+      "Grog": 15,
+      "Rugs": 35,
+      "Leather": 28,
+      "Cinnamon": 33,
+      "Coffee": 34,
+      "Mango": 16,
+      "Oil": 18,
+      "Nuts": 13,
+      "Paprika": 22,
+      "Pepper": 29,
+      "Beer": 8,
+      "Sugar": 41,
+      "Salt": 29,
+      "Tobacco": 44,
+      "Dates": 12,
+      "Saffron": 53,
+      "Silk": 75
+    }
+  },
+  {
+    "name": "La Navidad",
+    "x": 1668,
+    "y": 711,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 15,
+      "Vanilla": 29,
+      "Wine": 14,
+      "Grog": 14,
+      "Rugs": 41,
+      "Leather": 26,
+      "Cinnamon": 39,
+      "Coffee": 33,
+      "Mango": 19,
+      "Oil": 17,
+      "Nuts": 12,
+      "Paprika": 26,
+      "Pepper": 28,
+      "Beer": 8,
+      "Sugar": 39,
+      "Salt": 27,
+      "Tobacco": 42,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Tortuga",
+    "x": 1521,
+    "y": 900,
+    "image": "./images/pirate.png",
+    "goods": {
+      "Sugar": 0,
+      "Paprika": 0,
+      "Silk": 0,
+      "Mango": 0,
+      "Leather": 0,
+      "Nuts": 0,
+      "Oil": 0,
+      "Beer": 0,
+      "Cinnamon": 0,
+      "Rugs": 0,
+      "Tobacco": 0,
+      "Pepper": 0,
+      "Wine": 0,
+      "Grog": 0,
+      "Saffron": 0,
+      "Salt": 0,
+      "Dates": 0,
+      "Coffee": 0,
+      "Vanilla": 0,
+      "Pineapples": 0
+    }
+  },
+  {
+    "name": "Thermopylae",
+    "x": 1720,
+    "y": 1043,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 18,
+      "Vanilla": 35,
+      "Wine": 11,
+      "Grog": 11,
+      "Rugs": 41,
+      "Leather": 32,
+      "Cinnamon": 39,
+      "Coffee": 40,
+      "Mango": 19,
+      "Oil": 21,
+      "Nuts": 15,
+      "Paprika": 26,
+      "Pepper": 33,
+      "Beer": 6,
+      "Sugar": 47,
+      "Salt": 21,
+      "Tobacco": 50,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Gray Island",
+    "x": 1798,
+    "y": 1329,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 19,
+      "Vanilla": 38,
+      "Wine": 9,
+      "Grog": 9,
+      "Rugs": 41,
+      "Leather": 34,
+      "Cinnamon": 39,
+      "Coffee": 43,
+      "Mango": 19,
+      "Oil": 22,
+      "Nuts": 16,
+      "Paprika": 26,
+      "Pepper": 36,
+      "Beer": 5,
+      "Sugar": 51,
+      "Salt": 18,
+      "Tobacco": 55,
+      "Dates": 14,
+      "Saffron": 63,
+      "Silk": 88
+    }
+  },
+  {
+    "name": "Assab",
+    "x": 126,
+    "y": 391,
+    "image": "./images/town.png",
+    "goods": {
+      "Pineapples": 16,
+      "Vanilla": 31,
+      "Wine": 16,
+      "Grog": 16,
+      "Rugs": 24,
+      "Leather": 28,
+      "Cinnamon": 23,
+      "Coffee": 35,
+      "Mango": 11,
+      "Oil": 18,
+      "Nuts": 13,
+      "Paprika": 15,
+      "Pepper": 29,
+      "Beer": 9,
+      "Sugar": 42,
+      "Salt": 31,
+      "Tobacco": 32,
+      "Dates": 8,
+      "Saffron": 37,
+      "Silk": 52
+    }
+  }
+]
+
+
+// ---------- DEBUG CONTROL ----------
+let debugEnabled = false; // default: debug off
+
+
+let selectedTown = null; // used in show goodsform func
+let highlightedMarker = null; // used in highlightTownMarker func
+
+
+
+// Enable debug via console command enableDebug() ->>> opens options for adding new towns by clicking, editing pricing and exporting town data
+window.enableDebug = function() {
+  debugEnabled = true;
+  document.getElementById("exportBtn").disabled = false;
+  document.getElementById("output").disabled = false;
+  document.getElementById("exportBox").style.display = "block";
+  console.log("Debug mode enabled: export & marker creation active.");
+};
+
+// Disable export button & textarea initially
+document.getElementById("exportBtn").disabled = true;
+document.getElementById("output").disabled = true;
+
+// ---------- MAP SETUP ----------
+const map = L.map('map', {
+  crs: L.CRS.Simple,
+  maxZoom: -1,
+  minZoom: -1,
+  zoomControl: false
+});
+
+const bounds = [[0,0],[1800,2500]];
+
+L.imageOverlay(
+  "./images/map.png",
+  bounds
+).addTo(map);
+
+map.fitBounds(bounds);
+
+
+const markers = [...towns];
+
+// create a pane so i can load it behind the markers
+map.createPane('backgroundPane');
+map.getPane('backgroundPane').style.zIndex = 400; 
+
+
+// --- make pvp static circle
+
+const pvpPosition = [1370, 910]; 
+const pvpFixed = L.marker(pvpPosition, {
+  icon: L.divIcon({
+    html: `
+      <div style="
+        width: 500px;
+        height: 500px;
+        background: repeating-linear-gradient(
+          45deg,
+          rgba(255,0,0,0.5),
+          rgba(255,0,0,0.5) 10px,
+          rgba(0,0,0,0.5) 10px,
+          rgba(0,0,0,0.5) 20px
+        );
+        border: 2px solid red;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 200px;
+        color: red;
+        text-align: center;
+        text-shadow: 1px 1px 2px black;
+        opacity: 0.3;
+      ">PVP</div>
+    `,
+    className: '',
+    iconSize: [100, 100],
+    iconAnchor: [50, 50]
+  }),
+  interactive: false,
+  pane: 'backgroundPane'
+}).addTo(map);
+
+// ---------- Town Creation ----------
+function createTownIcon(data){
+  const size = 40;
+  const iconURL = data.image || "./images/town.png"; //default to town.png incase of no image
+  return L.divIcon({
+    className: "",
+    html: `
+      <div class="townMarker">
+        <img src="${iconURL}" style="width:${size}px; height:auto;">
+        <div class="townLabel">${data.name}</div>
+      </div>
+    `,
+     // weird issue with leaflet and zooming affecting entire dom dont have a fix for this yet... 
+     // fixed map size for the moment till ive resolved it, basically you zoom in and as you zooming the icon constantly gets smaller
+     // but im sure its to do with leaflet so maybe i need to look here and modify the rendering
+
+    iconSize: [size, size + 20],
+    iconAnchor: [size/2, size/2]
+  });
+}
+
+// ---------- ADD MARKERS ----------
+function addMarker(data){
+  const marker = L.marker([data.y, data.x], { icon: createTownIcon(data), data: data }).addTo(map);
+  if(!data.goods){
+    data.goods = {};
+    goodsList.forEach(good => data.goods[good] = 0);
+  }
+  marker.on("click", () => {
+    if(debugEnabled){
+      showGoodsForm(data);
+    }else{
+        console.log(data);
+        showGoodsData(data);
+    }
+  });
+
+  
+}
+
+markers.forEach(addMarker);
+
+
+// --- GOODS ------
+
+const goodsList = [
+  "Sugar", "Paprika", "Silk", "Mango", "Leather", "Nuts", "Oil", "Beer",
+  "Cinnamon", "Rugs", "Tobacco", "Pepper", "Wine", "Grog", "Saffron",
+  "Salt", "Dates", "Coffee", "Vanilla", "Pineapples"
+];
+
+const goodsMeta = {
+  Sugar:    { weight: 20, value: 30, spoils: false },
+  Paprika:  { weight: 9,  value: 15, spoils: false  },
+  Silk:     { weight: 20,  value: 52, spoils: false },
+  Mango:    { weight: 4,  value: 11, spoils: true  },
+  Leather:  { weight: 5, value: 20, spoils: false },
+  Nuts:     { weight: 5,  value: 9, spoils: false  },
+  Oil:      { weight: 3, value: 13, spoils: false },
+  Beer:     { weight: 6,  value: 5, spoils: false  },
+  Cinnamon: { weight: 7,  value: 23, spoils: false },
+  Rugs:     { weight: 6, value: 24, spoils: false },
+  Tobacco:  { weight: 14,  value: 32, spoils: false  },
+  Pepper:   { weight: 6,  value: 21, spoils: false },
+  Wine:     { weight: 3,  value: 9, spoils: false  },
+  Grog:     { weight: 5,  value: 9, spoils: true  },
+  Saffron:  { weight: 15, value: 37, spoils: false },
+  Salt:     { weight: 5,  value: 18, spoils: false },
+  Dates:    { weight: 6,  value: 8, spoils: true  },
+  Coffee:   { weight: 12,  value: 25, spoils: false  },
+  Vanilla:  { weight: 7,  value: 22, spoils: false  },
+  Pineapples:{ weight: 4, value: 11, spoils: true }
+};
+
+
+// handles map moving and highlighting of town user clicks 📍
+function highlightTownMarker(town) {
+  const marker = map.eachLayer(layer => {
+    if(layer.options?.data?.name === town.name){
+      if(highlightedMarker){
+        highlightedMarker.getElement().style.filter = ""; // reset previous so not multiple highlightted
+      }
+      map.panTo(layer.getLatLng());
+      const el = layer.getElement();
+      if(el){
+        el.style.filter = "drop-shadow(0 0 15px limegreen)";
+      }
+      highlightedMarker = layer;
+    }
+  });
+}
+
+// display goods data filtered by highest priced town
+function showGoodsData(town){
+  const container = document.getElementById("goodsFormContainer");
+
+  container.innerHTML = `
+    <h3>${town.name} Goods Details</h3>
+
+    <div style="margin-bottom:10px;">
+      <button onclick="showGoodsTab('tradeTab')">Trade Price In Town</button>
+      <button onclick="showGoodsTab('sellTab')">Better Sell Locations</button>
+    </div>
+
+    <div id="tradeTab"></div>
+    <div id="sellTab" style="display:none;"></div>
+  `;
+
+  const tradeContainer = document.getElementById("tradeTab");
+  const sellContainer = document.getElementById("sellTab");
+
+  // -----------------------------
+  // Better Sell Locations Table
+  // -----------------------------
+  let betterSellHTML = `<h4>Better Sell Locations</h4>`;
+  betterSellHTML += `
+    <table border="1" cellspacing="0" cellpadding="5">
+      <tr><th>Good</th><th>Towns With Higher Price</th></tr>
+  `;
+
+  goodsList.forEach(good => {
+
+    const betterTowns = towns
+      .filter(t => t.name !== town.name && t.goods && t.goods[good] > town.goods[good]);
+
+    if (betterTowns.length === 0) {
+      betterSellHTML += `<tr><td>${good}</td><td>-</td></tr>`;
+      return;
+    }
+
+    const prices = [...new Set(betterTowns.map(t => t.goods[good]))]
+      .sort((a, b) => b - a);
+
+    const highest = prices[0];
+    const secondHighest = prices[1];
+
+    const filteredTowns = betterTowns.filter(
+      t => t.goods[good] === highest || t.goods[good] === secondHighest
+    );
+
+    const townsString = filteredTowns
+      .sort((a, b) => b.goods[good] - a.goods[good])
+      .map(t => {
+
+        let color = "orange";
+        if (t.goods[good] === highest) color = "green";
+
+        return `<span style="color:${color};">
+                  <span class="townIcon" data-town="${t.name}" style="cursor:pointer;margin-right:4px;">📍</span>
+                  ${t.name} (${t.goods[good]})
+                </span>`;
+
+      }).join(", ");
+
+    betterSellHTML += `<tr><td>${good}</td><td>${townsString}</td></tr>`;
+  });
+
+  betterSellHTML += `</table>`;
+  sellContainer.innerHTML = betterSellHTML;
+
+
+  // -----------------------------
+  // Trade Price Table
+  // -----------------------------
+  let tableHTML = `
+    <h4>Trade Price In Town</h4>
+    <table border="1" cellspacing="0" cellpadding="5">
+      <tr>
+        <th>Good</th>
+        <th>Price</th>
+        <th>Weight</th>
+        <th>Value</th>
+        <th>Spoils?</th>
+      </tr>
+  `;
+
+  goodsList.forEach(good => {
+
+    const price = town.goods[good] || 0;
+    const meta = goodsMeta[good];
+
+    const prices = towns
+      .map(t => t.goods?.[good])
+      .filter(p => p && p > 0);
+
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    let priceDisplay = price;
+
+    if (price === minPrice) {
+      priceDisplay = `<span style="color:green;font-weight:bold">${price} (buy)</span>`;
+    } 
+    else if (price === maxPrice) {
+      priceDisplay = `<span style="color:gold;font-weight:bold">${price} (sell)</span>`;
+    }
+
+    tableHTML += `
+      <tr>
+        <td>${good}</td>
+        <td>${priceDisplay}</td>
+        <td>${meta.weight}</td>
+        <td>${meta.value}</td>
+        <td style="color:${meta.spoils ? 'red' : 'inherit'}">
+          ${meta.spoils ? "Yes" : "No"}
+        </td>
+      </tr>
+    `;
+  });
+
+  tableHTML += `</table>`;
+  tradeContainer.innerHTML = tableHTML;
+}
+
+// handle tabbing for the goods data display
+
+function showGoodsTab(tabId){
+
+  document.getElementById("tradeTab").style.display = "none";
+  document.getElementById("sellTab").style.display = "none";
+
+  document.getElementById(tabId).style.display = "block";
+}
+
+
+// function to help filter the array of towns and goods
+function getBetterSellTowns(good, currentTown) {
+  return towns.filter(t => t.name !== currentTown.name && t.goods && t.goods[good] > currentTown.goods[good]);
+}
+
+
+
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+////                START OF DEBUG STUFFF               /////////
+
+// ---------- CLICK TO ADD MARKER ----------
+map.on("click", function(e){
+  if(debugEnabled){
+    const x = Math.round(e.latlng.lng);
+    const y = Math.round(e.latlng.lat);
+
+    const name = prompt("Town name?");
+    if(!name) return;
+
+    const image = prompt("Icon image URL (optional)");
+
+    const data = {name, x, y};
+    if(image) data.image = image;
+
+    markers.push(data);
+    addMarker(data);
+  }
+
+  
+});
+
+/// DEBUG EDIT PRICES OF TOWN
+function showGoodsForm(town){
+  selectedTown = town;
+
+  const container = document.getElementById("goodsFormContainer");
+  container.innerHTML = `<h3>${town.name} Goods Prices</h3>`;
+
+  goodsList.forEach(good => {
+    const value = town.goods ? town.goods[good] : 0;
+    const inputHTML = `
+      <label>${good}: <input type="number" data-good="${good}" value="${value}" style="width: 80px;"></label><br>
+    `;
+    container.innerHTML += inputHTML;
+  });
+
+  container.innerHTML += `<button id="saveGoodsBtn">Save Prices</button>`;
+
+  document.getElementById("saveGoodsBtn").onclick = () => {
+    town.goods = {};
+    goodsList.forEach(good => {
+      const input = container.querySelector(`input[data-good="${good}"]`);
+      town.goods[good] = parseFloat(input.value) || 0;
+    });
+    alert(`Goods updated for ${town.name}`);
+  };
+}
+
+
+// ---------- EXPORT DATA ----------
+function exportMarkers(){
+  if(!debugEnabled) return;
+  document.getElementById("output").value = JSON.stringify(markers, null, 2);
+}
+
+document.getElementById("exportBtn").addEventListener("click", exportMarkers);
+
+
+////        end of debug stuff                          /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+//// ************************************************** /////////
+
+
+
+
+
+
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+//                  EVENT LISTENERS                        //
+
+
+
+
+// event listener for handling click of 📍
+
+document.getElementById("goodsFormContainer").addEventListener("click", (e) => {
+  if(e.target && e.target.classList.contains("townIcon")){
+    const townName = e.target.getAttribute("data-town");
+    const townObj = towns.find(t => t.name === townName);
+    if(townObj) highlightTownMarker(townObj);
+  }
+});
+
+
+
+//                 END EVENT LISTENERS                     //
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^//
+
+</script>
+</body>
+</html>
