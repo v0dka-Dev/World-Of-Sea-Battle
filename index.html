@@ -433,36 +433,36 @@ function showItemLocations(good){
 
   const bestTowns = townPrices.filter( t => t.price === highest || t.price === second  );
 
-  let html = `
-      <table border="1" cellspacing="0" cellpadding="5">
-        <tr><th>Town</th><th>Price</th></tr>
+ let html = `
+<table border="1" cellspacing="0" cellpadding="5">
+<tr>
+<th>Town</th>
+<th>Price</th>
+</tr>
+`;
 
+bestTowns.forEach(t => {
+
+  let color = "orange";
+  if (t.price === highest) color = "green";
+
+  html += `
+    <tr>
+      <td>
+        <span class="townIcon" data-town="${t.name}" style="cursor:pointer; margin-right:4px;">📍</span>
+        ${t.name}
+      </td>
+
+      <td style="color:${color}; font-weight:bold;">
+        ${t.price}
+      </td>
+    </tr>
   `;
-    
+});
 
-  bestTowns.forEach(t => {
+html += `</table>`;
 
-    let color = "orange";
-    if (t.price === highest) color = "green";
-
-    html += `
-      <tr>
-        <td>
-          <span class="townIcon" data-town="${t.name}" style="curse:pointer; margin-right:4px">📍</span>
-            ${t.name}
-        </td>
-      
-        <td style="color:${color}"; font-weight:bold"> ${t.price}</td>
-      </tr>
-        
-    `;
-
-    html += "</table>"
-
-    results.innerHTML = html;
-
-
-  })
+results.innerHTML = html;
 
 }
 
