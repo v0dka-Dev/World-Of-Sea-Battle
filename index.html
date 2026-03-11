@@ -278,7 +278,7 @@ function showGoodsData(town){
     <div style="margin-bottom:10px;">
       <button onclick="showGoodsTab('tradeTab')">Trade Price In Town</button>
       <button onclick="showGoodsTab('sellTab')">Better Sell Locations</button>
-      <button onclick="showGoodsTab('itemTab')">Find Item Location</button>
+      <button onclick="showGoodsTab('itemTab')">Find Item Sell Location</button>
     </div>
 
     <div id="tradeTab"></div>
@@ -344,7 +344,7 @@ function showGoodsData(town){
   // -----------------------------
 
   let itemHtml = `
-    <h4> Find Item Location</h4>
+    <h4> Find Item Sell Location</h4>
     <label> Select Item: </label>
     <select id="itemSelector">
       <option value="">-- select goods -- </option>
