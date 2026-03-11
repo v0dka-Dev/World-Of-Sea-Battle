@@ -278,14 +278,17 @@ function showGoodsData(town){
     <div style="margin-bottom:10px;">
       <button onclick="showGoodsTab('tradeTab')">Trade Price In Town</button>
       <button onclick="showGoodsTab('sellTab')">Better Sell Locations</button>
+      <button onclick="showGoodsTab('itemTab')">Find Item Location</button>
     </div>
 
     <div id="tradeTab"></div>
     <div id="sellTab" style="display:none;"></div>
+    <div id="itemTab" style="display:none;"></div>
   `;
 
   const tradeContainer = document.getElementById("tradeTab");
   const sellContainer = document.getElementById("sellTab");
+  const itemContainer = document.getElementById("itemTab");
 
   // -----------------------------
   // Better Sell Locations Table
@@ -336,6 +339,22 @@ function showGoodsData(town){
   betterSellHTML += `</table>`;
   sellContainer.innerHTML = betterSellHTML;
 
+  // ----------------------------- 
+  // Find Specific Item
+  // -----------------------------
+
+  let itemHtml = `
+    <h4> Find Item Location</h4>
+    <label> Select Item: </label>
+    <select id="itemSelector">
+      <option value="">-- select goods -- </option>
+      ${goodsList.map(g => `<option value="${g}">${g}</option>`).join("")}
+    </select>
+
+    <div id="itemResults" style="margin-top:10px;"></div>
+  `;
+
+  itemContainer.innerHTML = itemHtml;
 
   // -----------------------------
   // Trade Price Table
@@ -390,11 +409,77 @@ function showGoodsData(town){
   tradeContainer.innerHTML = tableHTML;
 }
 
+
+function showItemLocations(good){
+
+  const result = document.getElementById("itemResults");
+
+  if(!good){
+    results.innerHTML = "";
+    return;
+  }
+
+  const townPrices = towns.filter(t => t.goods && t.goods[good] > 0).map(t => ({ 
+      name: t.name,
+      price: t.goods[good]
+
+  }));
+
+
+  townPrices.sort((a,b) => b.price - a.price );
+
+  const highest = townPrices[0]?.price;
+  const second =  townPrices[1]?.price;
+
+  const bestTowns = townPrices.filter( t => t.price === highest || t.price === second  );
+
+  let html = `
+      <table border="1" cellspacing="0" cellpadding="5">
+        <tr><th>Town</th><th>Price</th></tr>
+
+  `;
+    
+
+  bestTowns.forEach(t => {
+
+    let color = "orange";
+    if (t.price === highest) color = "green";
+
+    html += `
+      <tr>
+        <td>
+          <span class="townIcon" data-town="${t.name}" style="curse:pointer; margin-right:4px">📍</span>
+            ${t.name}
+        </td>
+      <tr>
+      <td style="color:${color}"; font-weight:bold"> ${t.price}</td>
+      </tr>
+        
+    `;
+
+    html += "</table>"
+
+    results.innerHTML = html;
+
+
+  })
+
+}
+
+
+
+// handle click event for dropdown menu...
+
+document.getElementById("itemSelector").addEventListener("change", function(){ 
+              showItemLocations(this.value)
+              })
+
 // handle tabbing for the goods data display
 
 window.showGoodsTab = function(tabId){
   document.getElementById("tradeTab").style.display = "none";
   document.getElementById("sellTab").style.display = "none";
+  document.getElementById("itemTab").style.display = "none";
 
   document.getElementById(tabId).style.display = "block";
 }
