@@ -83,7 +83,7 @@ textarea {
     <button id="exportBtn">Export Markers</button>
     <br><br>
     <textarea id="output"></textarea>
-    <div id="goodsFormContainer"></div>
+    <!--<div id="goodsFormContainer"></div>-->
 </div>
   
 </div>
@@ -392,8 +392,7 @@ function showGoodsData(town){
 
 // handle tabbing for the goods data display
 
-function showGoodsTab(tabId){
-
+window.showGoodsTab = function(tabId){
   document.getElementById("tradeTab").style.display = "none";
   document.getElementById("sellTab").style.display = "none";
 
