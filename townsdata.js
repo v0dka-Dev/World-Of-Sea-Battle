@@ -1,5 +1,3 @@
-export default towns;
-
 const towns = [
   {
     "name": "Oneg",
@@ -1178,3 +1176,9 @@ const towns = [
     }
   }
 ]
+
+
+
+
+// export
+export default towns;
