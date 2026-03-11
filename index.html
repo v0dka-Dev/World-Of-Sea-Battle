@@ -470,8 +470,11 @@ function showItemLocations(good){
 
 // handle click event for dropdown menu...
 
-document.getElementById("itemSelector").addEventListener("change", function(){ 
-              showItemLocations(this.value)
+document.addEventListener("change", function(e){ 
+              if(e.target && e.target.id == "itemSelector"){
+                showItemLocations(e.target.value);
+              }
+              
               })
 
 // handle tabbing for the goods data display
